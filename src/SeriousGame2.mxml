@@ -1,0 +1,801 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   skinClass="skins.CustomApplicationSkin">
+	
+	
+	<fx:Style>
+		@namespace s "library://ns.adobe.com/flex/spark";
+		@namespace mx "library://ns.adobe.com/flex/mx";
+		
+		s|Form
+		{
+			horizontalCenter: 1;
+			height:100;
+		}
+		
+		s|VGroup .trophe
+		{
+			left:150;
+		}
+	</fx:Style>
+	
+	<fx:Declarations>
+		
+	</fx:Declarations>
+	
+	
+	
+	<fx:Script>
+		<![CDATA[
+			import flash.display.*;
+			import flash.events.*;
+			import flash.text.*;
+			import flash.display.Stage;
+			import flash.display.StageDisplayState;
+			import flash.display.StageScaleMode;
+			
+			public var tailleQuestion:uint=0;
+			public var nbreSeconde:uint = 80;
+			public var question:Array=new Array();//toute les questions simple pour au debut 30
+			public var erreur:Array=new Array();//toute les questions simple pour au debut 30
+			
+			public var or:uint=0;
+			public var bronze:uint=0;
+			public var argent:uint=0;
+			
+			public var i:uint=1;
+			public var valeur_question_id:uint;
+			public var minuteTimer:Timer;
+			public var score_nbre_point:uint=0;
+			public var valeurPoint:uint=2;
+			
+			public var conteneurSon:Sound;
+			public var liste_musique:Array;
+			public var ecouteur:SoundChannel;
+			public var controleur:SoundTransform;
+			
+			public var intervalIdentifier:uint;
+			
+			
+			
+		
+
+			
+			public var lettresAccents:Array = [{acc:"é", l:"e"},
+				{acc:"è", l:"e"},
+				{acc:"ë", l:"e"},
+				{acc:"à", l:"a"},
+				{acc:"ä", l:"a"},
+				{acc:"ü", l:"u"},
+				{acc:"ö", l:"o"}];
+			// fonction "nettoyante"
+			public function replaceAcc(str:String):String{
+				var s:String = str;
+				for(var i:Number=0;i<lettresAccents.length;i++)
+				{
+					s = s.split(lettresAccents[i].acc).join(lettresAccents[i].l);
+				}
+				return s.toLowerCase();
+			}
+			
+			
+			public function premiereLettre(str:String) : String {
+				var firstChar:String = str.substr(0, 1);
+				var restOfString:String = str.substr(1, str.length);
+				 
+				return firstChar.toUpperCase();
+			}
+			
+			public function accueil():void{
+				Menu.visible=true;
+				Question.visible=false;
+				Resultat.visible=false;
+				Score.visible=false;
+				minuteTimer.stop(); 
+			}
+			
+			public function score():void{
+				Menu.visible=false;
+				Question.visible=false;
+				Resultat.visible=false;
+				Score.visible=true;
+				
+			}
+			public function jouer():void{
+				debutTimer();
+				score_nbre_point=0;
+				i=0;
+				
+				stage.scaleMode = StageScaleMode.NO_SCALE;
+				
+				Menu.visible=false;
+				Question.visible=true;
+				Resultat.visible=false;
+				erreur = [];
+				erreurResultat.text="";
+				erreurResultat.setStyle("fontSize", "0");
+				reponseText.setStyle("borderColor", "black");
+				bar.label="80 secondes 0 points";
+				bar.setProgress(i, 80);
+				
+				question.push(["En rhétorique, réunion de deux mots de sens opposés..", "oxymore"]); 
+				question.push(["Avoir en horreur, détester, exécrer.", "abhorrer"]); 
+				question.push(["Personne qui mène une vie retirée. Moine, ermite vivant dans la solitude.", "anachorète"]);
+				question.push(["Considération respectueuse.", "déférence"]);
+				question.push(["Qui adopte ce qui lui paraît bon dans un ensemble d'idées, d'opinions.", "eclectique"]);
+				question.push(["Qui se rapporte à la correspondance, aux lettres.", "epistolaire"]);
+				question.push(["Adoucissement d'un expression jugée trot crue, trop choquante.", "euphémisme"]);
+				question.push(["Moyen de se débarrasser de quelque chose, dérivatif .", "exutoire"]);
+				question.push(["Discours ou écrit embrouillé et confus.", "galimatias"]);
+				question.push(["Qui pousse les êtres humains à former des groupes ou à adopter le même comportement .", "grégaire"]);
+				question.push(["Manque de continuité, de cohérence, décalage.", "hiatus"]);
+				question.push(["Qui méprise la religion, athée, incroyant.", "impie"]);
+				question.push(["Caractère de ce qui est vain, inutile.", "inanité"]);
+				question.push(["Manque de soin, négligence, laisser-aller.", "incurie"]);
+				question.push(["Etat d'une personne qui vit dans la misère. Grande pauvreté intellectuelle ou morale.", "indigence"]);
+				question.push(["Nonchalance, apathie, indifférence.", "indolence"]);
+				question.push(["Absurde, dépourvu de sens.", "inepte"]);
+				question.push(["Qui agit, parle avec une innocente franchise sans rien dissimuler de ses pensées, de ses sentiments.", "ingénu"]);
+				question.push(["Expression qui consiste à dire moins pour faire entendre plus.", "litote"]);
+				question.push(["Assemblage de mots creux dans un discours, un raisonnement.", "logomachie"]);
+				question.push(["Disposition d'esprit qui incline à une bonté indulgente.", "mansuétude"]);
+				question.push(["Se dit d'un terme qui présente sous un aspect favorable l'idée ou l'objet désigné ,par opposition à péjoratif..", "mélioratif"]);
+				question.push(["Tendance pathologique à l'altération de la vérité et à la fabulation.", "mythomanie"]);
+				question.push(["Négation des valeurs intellectuelles et morales communes à un groupe social, refus de l'idéal collectif de ce groupe.", "nihilisme"]);
+				question.push(["Affectation qu'on apporte à faire quelque chose, attitude de quelqu'un qui cherche à se faire remarquer, étalage indiscret d'un avantage ou d'une qualité .", "ostentation"]);
+				question.push(["Ecrit satirique généralement court et violent, dirigé contre quelqu'un, une institution, un groupe.", "pamphlet"]);
+				question.push(["Modèle théorique de pensée qui oriente la recherche et la réflexion scientifique.", "paradigme"]);
+				question.push(["Qui manque d'audace, de courage, qui a peur des responsabilités.", "pusillanime"]);
+				question.push(["Ce qu'il y a de principal, de meilleur, d'essentiel.", "quintessence"]);
+				question.push(["Raisonnement qui n'est logiquement correct qu'en apparence et qui est conçu avec l'intention d'induire en erreur.", "sophisme"]);
+				question.push(["Obscur, dont le sens est difficile à saisir.", "sibyllin"]);
+				question.push(["Système philosophique ou religieux qui tend à faire fusionner plusieurs doctrines différentes.", "syncrétisme"]);
+				question.push(["Caractère de ce qui se situe hors d'atteinte de l'expérience et de la pensée de l'homme.", "transcendance"]);
+				question.push(["Vérité d'évidence, banale, sans portée.", "truisme"]);
+				question.push(["Traiter quelque chose, quelqu'un avec beaucoup de mépris, dénigrer.", "vilipender"]);
+				question.push(["Qui parle avec abondance et rapidité .", "volubile"]);
+				question.push(["Qui aime à se venger, qui est inspiré par le désir de la vengeance.", "vindicatif"]);
+				question.push(["Avoir en horreur, détester au plus haut point.", "abhorrer"]);
+				question.push(["Qui inspire une violente répulsion.", "abject"]);
+				question.push(["Pardonner, excuser.", "absoudre"]);
+				question.push(["Donner son entier consentement.", "acquiescer"]);
+				question.push(["Réprimander sévèrement en avertissant de ne plus recommencer.", "admonester"]);
+				question.push(["Flatter bassement, en courtisan servile.", "aduler"]);
+				question.push(["Eléments descriptifs ou narratifs prétendant exprimer une idée.", "allégorie"]);
+				question.push(["Qui présente plusieurs sens possibles, équivoque, incertain.", "ambigu"]);
+				question.push(["Amabilité pleine de charme.", "aménité"]);
+				question.push(["Qui constitue un projet irréalisable, imaginaire, chimérique.", "utopique"]);
+				question.push(["Faute grammaticale concernant la syntaxe.", "solécisme"]);
+				question.push(["Inquiétude de conscience, doute, hésitation.", "scrupule"]);
+				question.push(["Personne qui a renié sa religion, ses opinions, son parti.", "renégat"]);
+				question.push(["Qui a lieu après la mort de quelqu'un.", "posthume"]);
+				question.push(["Qui a de la mesure dans ses jugements, calme, équilibré.", "pondéré"]);
+				question.push(["Relatif au rêve, qui semble sorti d'un rêve.", "onirique"]);
+				question.push(["Mot qui imite par le son la chose dénomée.", "onomatopée"]);
+				question.push(["Désoeuvrement, inaction.", "oisiveté"]);
+				question.push(["Etat d'abattement, de tristesse accompagné de rêveries, cafard.", "mélancolie"]);
+				question.push(["Relatif au moyen-âge.", "médiéval"]);
+				question.push(["Qui a rapport au mariage.", "matrimonial"]);
+				question.push(["Qui préconise les pratiques anticonceptionnelles.", "malthusien"]);
+				question.push(["Très petit, minuscule.", "lilliputien"]);
+				question.push(["Ordre dans lequel se classent les membres d'un groupe.", "hiérarchie"]);
+				question.push(["Que l'on fait à la dérobée, qui passe presque inaperçu, fugace.", "furtif"]);
+				question.push(["Plaisanterie burlesque, boutade, galéjade.", "facétie"]);
+				question.push(["Dissentiment, dissension entre plusieurs personnes.", "discorde"]);
+				question.push(["Manque du nécessaire, manque de vivres, famine.", "disette"]);
+				question.push(["Adresse des mains, art, habileté.", "dextérité"]);
+				question.push(["Critique violente, pamphlet, satire.", "diatribe"]);
+				question.push(["Développement oral ou écrit qui s'écarte du sujet.", "digression"]);
+				question.push(["Dépenser de manière excessive et désordonnée.", "dilapider"]);
+				question.push(["Obligation de choisir entre deux partis contraires.", "dilemme"]);
+				question.push(["Considération très respectueuse que l'on témoigne à quelqu'un.", "déférence"]);
+				question.push(["Personne qui dénonce pour des motifs méprisables.", "délateur"]);
+				question.push(["Enfermer dans des limites, borner.", "circonscrire"]);
+				question.push(["Débat entre plusieurs personnes, savants ou spécialistes.", "colloque"]);
+				question.push(["Personne qui mange avec d'autres à la même table.", "commensal"]);
+				question.push(["Accorder comme une faveur, un droit, un privilège.", "concéder"]);
+				question.push(["Qualité de ce qui s'exprime en peu de mots.", "concision"]);
+				question.push(["Conspiration, complot contre l'etat, le souverain.", "conjuration"]);
+				question.push(["Qui est de notre temps, actuel.", "contemporain"]);
+				question.push(["Désir immodéré de posséder une chose.", "convoitise"]);
+				question.push(["Qui comprend des personnes de tous les pays.", "cosmopolite"]);
+				question.push(["Caractère de celui qui est peureux, lâcheté, poltronnerie.", "couardise"]);
+				question.push(["Irritation véhémente contre un offenseur.", "courroux"]);
+				question.push(["Qui manque de force physique, sans aucune vigueur, fragile.", "débile"]);
+				question.push(["Acceptable, correct.", "décent"]);
+				question.push(["Désappointement causé par un insuccés, une mésaventure.", "déconvenue"]);
+				question.push(["Qui est dans une extrême déchéance physique.", "décrépit"]);
+				question.push(["Désastre, bouleversement.", "cataclysme"]);
+				question.push(["Rapidité dans l'exécution.", "célérité"]);
+				question.push(["Vaine imagination, fantasme, mirage.", "chimère"]);
+				question.push(["Crit qui a pour objet l'histoire d'une vie particulière.", "biographie"]);
+				question.push(["D'une teinte pâle et sans éclat.", "blafard"]);
+				question.push(["Qui remâche son mécontentement, ronchon, grognon.", "bougon"]);
+				question.push(["Assemblage confus ou discordant de voix, de sons.", "cacophonie"]);
+				question.push(["Imputation mensongère qui attaque la réputation, l'honneur.", "calomnie"]);
+				question.push(["Opposition de deux pensées, de deux expressions.", "antithèse"]);
+				question.push(["Point le plus élevé, le plus haut degré.", "apogée"]);
+				question.push(["Epanouissement sublime.", "apothéose"]);
+				question.push(["Qui dépend du bon plaisir, du caprice de quelqu'un.", "arbitraire"]);
+				question.push(["Mot, formule, tour ancien qui n'est plus en usage.", "archaïsme"]);
+				question.push(["Assemblée de savants.", "aréopage"]);
+				question.push(["Personne qui s'impose des privations par piété.", "ascète"]);
+				question.push(["Réduire à la servitude, à l'esclavage.", "asservir"]);
+				question.push(["Qui se montre sévère sur soi, retranche sur son plaisir.", "austère"]);
+				question.push(["Qui est au sud du globe terrestre.", "austral"]);
+				question.push(["Articuler en hésitant les mots que l'on veut prononcer.", "balbutier"]);
+				question.push(["Perte totale ou partielle de la mémoire.", "amnésie"]);
+				question.push(["Mot obtenu en mélangeant les lettres d'un autre mot.", "anagramme"]);
+				question.push(["Qui présente une ressemblance.", "analogue"]);
+				question.push(["Contradiction.", "antinomie"]);
+				question.push(["Qui est dans le besoin.", "besogneux"]);
+				question.push(["Relatif aux prisons.", "carcéral"]);
+				question.push(["Manière d'exprimer sa pensée d'une façon indirecte.", "circonlocution"]);
+				question.push(["Mépris, arrogance, hauteur.", "dédain"]);
+				question.push(["Arbitraire, tyrannique.", "despotique"]);
+				question.push(["Démodé, suranné, obsolète.", "désuet"]);
+				question.push(["Ne pas convenir, nier.", "disconvenir"]);
+				question.push(["Qui se montre le jour.", "diurne"]);
+				question.push(["Zmploi abusif du style élevé, du ton déclamatoire, grandiloquent.", "emphase"]);
+				question.push(["Ouvrage qui traite de toutes les connaissances humaines.", "encyclopédie"]);
+				question.push(["Circonstances appartenant à un ensemble d'événements.", "épisode"]);
+				question.push(["Epoque de l'année où la durée du jour égale à celle de la nuit.", "équinoxe"]);
+				question.push(["Manifestation orale, bruyante et scandaleuse ; éclat, tapage.", "esclandre"]);
+				question.push(["Groupement humain qui repose sur une langue, une culture commune.", "ethnie"]);
+				question.push(["S'étioler, rendre chétif, affaiblir, atrophier.", "s'étioler"]);
+				question.push(["Adoucissement d'une expression trop crue, trop choquante.", "euphémisme"]);
+				question.push(["Qui traite à fond un sujet, complet.", "exhaustif"]);
+				question.push(["Qui a perdu beaucoup de sang, très pâle, livide, cadavérique.", "exsangue"]);
+				question.push(["Invraisemblable quoique réel, extraordinaire, prodigieux.", "fabuleux"]);
+				question.push(["Qui est destiné à tromper, faux, mensonger, fourbe.", "fallacieux"]);
+				question.push(["Eblouir par la beauté, l'ascendant, le prestige : séduire.", "fasciner"]);
+				question.push(["Qui manifeste une agitation excessive ; excité.", "fébrile"]);
+				question.push(["Voler quelqu'un en le dupant.", "flouer"]);
+				question.push(["Vaste peinture murale.", "fresque"]);
+				question.push(["Qui est dépourvu de sérieux, creux, frivole, puéril, léger.", "futile"]);
+				question.push(["Projet si étrange, si difficile, qu'on dirait un pari à tenir.", "gageure"]);
+				question.push(["Construction ou emploi propre à la langue française.", "gallicisme"]);
+				question.push(["Cachot, prison.", "geôle"]);
+				question.push(["Qui aime à railler, moqueur, facétieux.", "gouailleur"]);
+				question.push(["Perception morbide non provoquée par un objet réel.", "hallucination"]);
+				question.push(["Discours solennel prononcé devant une assemblée, des troupes.", "harangue"]);
+				question.push(["Fier, orgueilleux, arrogant.", "hautain"]);
+				question.push(["Massacre d'un grand nombre d'hommes, carnage.", "hécatombe"]);
+				question.push(["Suprématie, direction, pouvoir, prépondérance.", "hégémonie"]);
+				question.push(["Eelatif au blason, aux armoiries.", "héraldique"]);
+				question.push(["Bouriffé, échevelé.", "hirsute"]);
+				question.push(["Sacrifice religieux.", "holocauste"]);
+				question.push(["Huis clos, toutes portes fermées, sans que le public soit admis.", "huis clos"]);
+				question.push(["Sentiment de sa faiblesse qui pousse l'homme à s'abaisser, modestie.", "humilité"]);
+				question.push(["Retenir l'attention par une attraction irrésistible, obnubiler.", "hypnotiser"]);
+				question.push(["Vice qui consiste à déguiser son véritable caractère, duplicité.", "hypocrisie"]);
+				question.push(["Insuffisance du taux de glucose du sang.", "hypoglycémie"]);
+				question.push(["Langue propre à une communauté.", "idiome"]);
+				question.push(["Qui ne trahit aucune émotion, aucun trouble, imperturbable.", "impassible"]);
+				question.push(["Qui manque d'argent, pauvre, besogneux.", "impécunieux"]);
+				question.push(["Contenu dans une proposition sans être formellement exprimé.", "implicite"]);
+				question.push(["Celui qui usurpe le nom d'un autre, qui abuse de la confiance.", "imposteur"]);
+				question.push(["Souhait de malheur contre quelqu'un, malédiction, anathème.", "imprécation"]);
+				question.push(["Représenter une chose abstraite, figurer.", "incarner"]);
+				question.push(["Accuser, mettre en cause, suspecter.", "incriminer"]);
+				question.push(["Qui n'a éprouvé aucun dommage, sain et sauf.", "indemne"]);
+				question.push(["Né dans le pays dont il est question, autochtone, aborigène.", "indigène"]);
+				question.push(["Manque d'énergie intellectuelle ou morale, paresse, immobilisme.", "inertie"]);
+				question.push(["Qu'il est impossible d'éteindre, insatiable.", "inextinguible"]);
+				question.push(["Modifier la direction, l'orientation d'une action.", "infléchir"]);
+				question.push(["Qualité de celui qui a l'esprit inventif, astuce.", "ingéniosité"]);
+				question.push(["Qui a une sincérité innocente et naïve, candide, naïf.", "ingénu"]);
+				question.push(["Mettre en terre un corps humain, ensevelir, enterrer.", "inhumer"]);
+				question.push(["Qui ne peut être rassasié, dévorant, inextinguible.", "insatiable"]);
+				question.push(["Contraire au bon sens, absurde, extravagant.", "insensé"]);
+				question.push(["Qui a le caractère d'une embûche, d'un piège.", "insidieux"]);
+				question.push(["Habitant d'une île.", "insulaire"]);
+				question.push(["Soulèvement contre le pouvoir établi, révolution.", "insurrection"]);
+				question.push(["Qui n'est pas fait à propos, déplacé.", "intempestif"]);
+				question.push(["Ensemble d'événements qui constitue la trame d'un roman.", "intrigue"]);
+				question.push(["Action de s'introduire sans droit dans une société.", "intrusion"]);
+				question.push(["Prompt à s'irriter, à s'emporter.", "irascible"]);
+				question.push(["Qui a peine à se déterminer, hésitant, indécis.", "irrésolu"]);
+				question.push(["Qui manque de respect, impertinent, impoli.", "irrévérencieux"]);
+				question.push(["Qui ne peut être révoqué, arrêté, définitif.", "irrévocable"]);
+				question.push(["Assujettisement, oppression, dépendance.", "joug"]);
+				question.push(["Qui est plein de gaieté franche, simple et communicative.", "jovial"]);
+				question.push(["Se réjouir vivement de quelque chose.", "jubiler"]);
+				question.push(["Qui s'exprime en peu de mots, concis.", "laconique"]);
+				question.push(["Revêtir un mur de panneaux de marbre, stuc ou bois.", "lambrissé"]);
+				question.push(["Personne qui a remporté un prix dans un concours.", "lauréat"]);
+				question.push(["Dispostion faite par testament au bénéfice d'une personne.", "legs"]);
+				question.push(["Autorisé, permis, qui n'est interdit par aucune loi.", "licite"]);
+				question.push(["Opération consistant à réunir, à serrer avec un lien, à fixe.", "ligature"]);
+				question.push(["Pièce de toile dans laquelle on ensevelit un mort.", "linceul"]);
+				question.push(["Expression qui consiste à dire moins pour faire entendre plus.", "litote"]);
+				question.push(["Qui parle volontier, bavard.", "loquace"]);
+				question.push(["Mode d'expression passionné, poétique.", "lyrisme"]);
+				question.push(["Disposition à pardonner généreusement, indulgence.", "mansuétude"]);
+				question.push(["Personne riche qui aide les écrivains, les artistes.", "mécène"]);
+				question.push(["Révélation des défauts d'autrui dans le but de lui nuire.", "médisance"]);
+				question.push(["Penchant à rapporter tout au gain.", "mercantilisme"]);
+				question.push(["Très attentif aux détails, minutieux, pointilleux.", "méticuleux"]);
+				question.push(["Art de développer la mémoire par des exercices.", "mnémotechnie"]);
+				question.push(["Légère humidité.", "moiteur"]);
+				question.push(["Maladif, malsain, causé par un dérèglement psychique.", "morbide"]);
+				question.push(["Réprimander, sermonner en se donnant des airs de moraliste.", "morigéner"]);
+				question.push(["Aspect général du corps humain.", "morphologie"]);
+				question.push(["Récit fabuleux, souvent d'origine populaire.", "mythe"]);
+				question.push(["Cimetière antique.", "nécropole"]);
+				question.push(["Activité commerciale.", "négoce"]);
+				question.push(["Favoritisme d'une personne puissante à l'égard de ses parents.", "népotisme"]);
+				question.push(["Regret mélancolique, désir insatisfait.", "nostalgie"]);
+				question.push(["Qui porte à l'excés les attentions, les égards, le respect.", "obséquieux"]);
+				question.push(["Qui n'est plus en usage, désuet.", "obsolète"]);
+				question.push(["Qui manque de finesse, borné.", "obtus"]);
+				question.push(["Qui occasionne des frais, des dépenses, coûteux, cher.", "onéreux"]);
+				question.push(["Grande abondance de biens, aisance, richesse.", "opulence"]);
+				question.push(["Mise en valeur excessive et indiscrète d'un avantage.", "ostentation"]);
+				question.push(["Décision d'exclure un membre d'un groupe.", "ostracisme"]);
+				question.push(["Remède unique pour toutes les maladies.", "panacée"]);
+				question.push(["Discours à la louange d'une personne.", "panégyrique"]);
+				question.push(["Qui recherche la contradiction, bizarre, inconcevable.", "paradoxal"]);
+				question.push(["Fait d'être pareil, égalité, ressemblance.", "parité"]);
+				question.push(["Violation de serment.", "parjure"]);
+				question.push(["Imiter quelqu'un d'une façon grotesque, caricaturer.", "parodier"]);
+				question.push(["Le plus haut degré d'une sensation ou d'un sentiment.", "paroxysme"]);
+				question.push(["Qui émeut vivement, poignant, touchant.", "pathétique"]);
+				question.push(["Etat permanent de pauvreté dans une partie de la société.", "paupérisme"]);
+				question.push(["Faute sans gravité.", "peccadille"]);
+				question.push(["Qui manifeste prétentieusement une affectation de savoir.", "pédant"]);
+				question.push(["Dangereux pour la santé, mauvais, nocif.", "pernicieux"]);
+				question.push(["Discourir, parler d'une manière prétentieuse.", "pérorer"]);
+				question.push(["Qui ne sait que faire dans une situation embarrassante,  hésitant.", "perplexe"]);
+				question.push(["Doué d'un esprit pénétrant, subtil.", "perspicace"]);
+				question.push(["Aspect du visage, ensemble des traits, faciès.", "physionomie"]);
+				question.push(["Qui attire l'attention par un aspect original.", "pittoresque"]);
+				question.push(["Vol littéraire, copie, emprunt, imitation.", "plagiat"]);
+				question.push(["Répétition de mots ayant le même sens.", "pléonasme"]);
+				question.push(["Débat, controverse, discussion.", "polémique"]);
+				question.push(["Préférence marquée pour quelqu'un ou quelque chose.", "prédilection"]);
+				question.push(["Défendre, interdire par une mesure légale.", "prohiber"]);
+				question.push(["Prédire, annoncer ce qui va arriver.", "prophétiser"]);
+				question.push(["Action d'éclat, action remarquable, exploit.", "prouesse"]);
+				question.push(["Chanter les psaumes, réciter d'une manière rituelle et monotone.", "psalmodier"]);
+				question.push(["Connaissance des sentiments d'autrui, finesse.", "psychologie"]);
+				question.push(["Combatif, qui aime le combat, la polémique.", "pugnace"]);
+				question.push(["Propos gouailleur, plaisanterie vulgaire, raillerie.", "quolibet"]);
+				question.push(["Ramener au calme, à la sérénité.", "rasséréner"]);
+				question.push(["Chose ou personne dédaignée, considérée comme vile et sans valeur.", "rebut"]);
+				question.push(["Fait de commettre une nouvelle infraction après une condamnation.", "récidive"]);
+				question.push(["Proposition inverse de la précédente.", "réciproque"]);
+				question.push(["Faire de nouveau, renouveler, répéter.", "réitérer"]);
+				question.push(["Discours  par lequel on accuse quelqu'un, reproches violents.", "réquisitoire"]);
+				question.push(["Qui montre de la réserve, des hésitations.", "réticent"]);
+				question.push(["Ironie, raillerie insultante.", "sarcasme"]);
+				question.push(["Relatif au vieillard, à la vieillesse.", "sénile"]);
+				question.push(["Qui a un caractère de soumission avilissant, obséquieux.", "servile"]);
+				question.push(["Mauvais traitements corporels, coup, violence.", "sévices"]);
+				question.push(["Retenue, modération, mesure, réserve.", "sobriété"]);
+				question.push(["Moyen détourné pour se tirer d'embarras, ruse, stratagème.", "subterfuge"]);
+				question.push(["Pensée ou raisonnement d'une grande finesse, sagacité.", "subtilité"]);
+				question.push(["Ce qui remplace plus ou moins bien quelque chose, ersatz.", "succédané"]);
+				question.push(["Qui est dit ou écrit en peu de mots, concis.", "succinct"]);
+				question.push(["Attendre l'expiration d'un délai, différer, remettre.", "surseoir"]);
+				question.push(["Faire naître un sentiment, une idée, éveiller, provoquer.", "susciter"]);
+				question.push(["Qui parle peu, qui n'est pas d'humeur à parler, morose.", "taciturne"]);
+				question.push(["User de détour au lieu de se décider, atermoyer.", "tergiverser"]);
+				question.push(["Engourdissement profond, léthargie, somnolence.", "torpeur"]);
+				question.push(["Personne qui passe dans le parti adverse, dissident.", "transfuge"]);
+				question.push(["Aventures plus ou moins désagréables, mésaventures.", "tribulation"]);
+				question.push(["Obtenir par la violence, par fraude, de façon illégitime.", "usurper"]);
+				question.push(["Qui n'a que des intentions faibles sans se décider à agir.", "velléitaire"]);
+				question.push(["Qui se laisse acheter, corrompu.", "vénal"]);
+				question.push(["Qui n'a aucune énergie, aucune volonté.", "veule"]);
+				question.push(["Evénements heureux ou malheureux qui affectent l'existence.", "vicissitudes"]);
+				question.push(["Porté à la vengeance, rancunier.", "vindicatif"]);
+				
+				tailleQuestion = question.length;
+				
+				var valeur_aleatoire:String = String(Math.round(Math.random()*(Number(tailleQuestion-1)-0+1)+(0-.5)));
+				valeur_question_id = uint(valeur_aleatoire);
+				questionIntitule.text=question[valeur_aleatoire][0];
+				reponseText.text=premiereLettre(question[valeur_aleatoire][1]);
+				nbreLettre.text=String(question[valeur_aleatoire][1].length-1);
+			}
+			
+		
+			
+			public function debutTimer():void  
+			{ 
+				
+				minuteTimer = new Timer(1000, nbreSeconde); 
+				
+				
+				minuteTimer.addEventListener(TimerEvent.TIMER, onTick); 
+				minuteTimer.addEventListener(TimerEvent.TIMER_COMPLETE, onTimerComplete); 
+				
+				
+				minuteTimer.start(); 
+			} 
+			
+			public function onTick(event:TimerEvent):void  
+			{ 
+				
+				bar.setProgress(i, 80);
+				bar.label=(80-i)+" secondes "+score_nbre_point+" points";
+				i++;
+				
+				if(i==74){
+					
+					ecouteur = new SoundChannel(); 
+					conteneurSon = new Sound();
+					controleur = new SoundTransform();
+					liste_musique = new Array();
+					liste_musique[0] = new URLRequest("minuterie.mp3");
+					conteneurSon.load(liste_musique[0]);
+					
+					ecouteur=conteneurSon.play();
+					
+					controleur.volume = 0.25; //Réglage du volume 
+					ecouteur.soundTransform = controleur; //Application du volume sonore
+					//ecouteur.addEventListener(Event.SOUND_COMPLETE, boucle_son); //Applique un écouteur détectant la fin de lecture du son
+				}
+			} 
+			
+			
+			
+			
+			
+			public function onTimerComplete(event:TimerEvent):void 
+			{ 
+				//terminé
+				Question.visible=false;
+				Resultat.visible=true;
+				if(score_nbre_point<=5){
+					resultatIntitule.text="Dommage !";
+					resultatScore.text=score_nbre_point+" points \nPersévérez pour remporter un trophée...";
+					
+					ecouteur = new SoundChannel(); //Création d'un lecteur de son
+					conteneurSon = new Sound();
+					controleur = new SoundTransform();
+					liste_musique = new Array();
+					liste_musique[0] = new URLRequest("sound_end.mp3");
+					conteneurSon.load(liste_musique[0]);
+					
+					ecouteur=conteneurSon.play();
+					
+					controleur.volume = 0.25; //Réglage du volume 
+					ecouteur.soundTransform = controleur; //Application du volume sonore
+					//ecouteur.addEventListener(Event.SOUND_COMPLETE, boucle_son); //Applique un écouteur détectant la fin de lecture du son
+					
+				}else{
+					resultatIntitule.text="Bravo !";
+					resultatScore.text=score_nbre_point+" points \nVous avez remporté un trophée.";
+					if(score_nbre_point>=15){
+						tropheImage.source="or.png";
+						or++;
+						OrNbre.text=String(or);
+						
+						ecouteur = new SoundChannel(); //Création d'un lecteur de son
+						conteneurSon = new Sound();
+						controleur = new SoundTransform();
+						liste_musique = new Array();
+						liste_musique[0] = new URLRequest("tchouba.mp3");
+						conteneurSon.load(liste_musique[0]);
+						
+						ecouteur=conteneurSon.play();
+						
+						controleur.volume = 0.25; //Réglage du volume 
+						ecouteur.soundTransform = controleur; //Application du volume sonore
+						//ecouteur.addEventListener(Event.SOUND_COMPLETE, boucle_son); //Applique un écouteur détectant la fin de lecture du son
+						
+						
+					}else if(score_nbre_point>=10){
+						tropheImage.source="argent.png";
+						argent++;
+						ArgentNbre.text=String(argent);
+						
+						ecouteur = new SoundChannel(); //Création d'un lecteur de son
+						conteneurSon = new Sound();
+						controleur = new SoundTransform();
+						liste_musique = new Array();
+						liste_musique[0] = new URLRequest("sound_end.mp3");
+						conteneurSon.load(liste_musique[0]);
+						
+						ecouteur=conteneurSon.play();
+						
+						controleur.volume = 0.25; //Réglage du volume 
+						ecouteur.soundTransform = controleur; //Application du volume sonore
+						//ecouteur.addEventListener(Event.SOUND_COMPLETE, boucle_son); //Applique un écouteur détectant la fin de lecture du son
+						
+					}else{
+						tropheImage.source="bronze.png";
+						bronze++;
+						BronzeNbre.text=String(bronze);
+						
+						ecouteur = new SoundChannel(); //Création d'un lecteur de son
+						conteneurSon = new Sound();
+						controleur = new SoundTransform();
+						liste_musique = new Array();
+						liste_musique[0] = new URLRequest("sound_end.mp3");
+						conteneurSon.load(liste_musique[0]);
+						
+						ecouteur=conteneurSon.play();
+						
+						controleur.volume = 0.25; //Réglage du volume 
+						ecouteur.soundTransform = controleur; //Application du volume sonore
+						//ecouteur.addEventListener(Event.SOUND_COMPLETE, boucle_son); //Applique un écouteur détectant la fin de lecture du son
+						
+					}
+					
+				}
+				
+				
+				var message:String="";
+				
+				for (var x:uint=0; x<=erreur.length-1; x++){
+					message=message+erreur[x][1]+" : "+erreur[x][0]+"\n\n";
+				
+				}
+				if(message!=""){
+					erreurAfficher.text=message;
+					VosErreurs.text="La correction :";
+				}
+				
+			} 
+			
+			
+			
+			
+			
+			public function valider():void{
+				clearTimeout(intervalIdentifier);
+				if(replaceAcc(reponseText.text)==replaceAcc(question[valeur_question_id][1])){
+					if(valeurPoint==0){
+						reponseText.setStyle("borderColor", "black");
+						erreurResultat.text="La réponse était "+entie(question[valeur_question_id][1]);
+						erreurResultat.setStyle("color", "black");
+						erreurResultat.setStyle("fontSize", "15");
+						erreurResultatItem.height=40;
+						erreur.push(question[valeur_question_id]);
+					}else if(valeurPoint==1){
+						reponseText.setStyle("borderColor", "green");
+						erreurResultat.text=entie(question[valeur_question_id][1])+ " +1 point";
+						erreurResultat.setStyle("color", "green");
+						
+						
+						
+						erreurResultat.setStyle("fontSize", "15");
+						erreurResultatItem.height=40;
+						score_nbre_point=score_nbre_point+valeurPoint;
+						bar.label=(80-i)+" secondes "+score_nbre_point+" points";
+						
+						ecouteur = new SoundChannel(); //Création d'un lecteur de son
+						conteneurSon = new Sound();
+						controleur = new SoundTransform();
+						liste_musique = new Array();
+						liste_musique[0] = new URLRequest("sound_true.mp3");
+						conteneurSon.load(liste_musique[0]);
+						
+						ecouteur=conteneurSon.play();
+						
+						controleur.volume = 0.25; //Réglage du volume 
+						ecouteur.soundTransform = controleur; //Application du volume sonore
+						
+					}else if(valeurPoint==2){
+						reponseText.setStyle("borderColor", "green");
+						erreurResultat.text=entie(question[valeur_question_id][1])+ " +2 points";
+						erreurResultat.setStyle("color", "green");
+						
+						
+						
+						erreurResultat.setStyle("fontSize", "15");
+						erreurResultatItem.height=40;
+						score_nbre_point=score_nbre_point+valeurPoint;
+						bar.label=(80-i)+" secondes "+score_nbre_point+" points";
+						
+						ecouteur = new SoundChannel(); //Création d'un lecteur de son
+						conteneurSon = new Sound();
+						controleur = new SoundTransform();
+						liste_musique = new Array();
+						liste_musique[0] = new URLRequest("sound_true.mp3");
+						conteneurSon.load(liste_musique[0]);
+						
+						ecouteur=conteneurSon.play();
+						
+						controleur.volume = 0.25; //Réglage du volume 
+						ecouteur.soundTransform = controleur; //Application du volume sonore
+						
+					}
+				
+					
+				}else{// erreur
+					reponseText.setStyle("borderColor", "red");
+					erreur.push(question[valeur_question_id]);
+					
+					erreurResultat.text="FAUX : "+question[valeur_question_id][1];
+					erreurResultat.setStyle("color", "red");
+					erreurResultat.setStyle("fontSize", "15");
+					erreurResultatItem.height=40;
+					
+					
+					ecouteur = new SoundChannel(); //Création d'un lecteur de son
+					conteneurSon = new Sound();
+					controleur = new SoundTransform();
+					liste_musique = new Array();
+					liste_musique[0] = new URLRequest("sound_false.mp3");
+					conteneurSon.load(liste_musique[0]);
+					
+					ecouteur=conteneurSon.play();
+					
+					controleur.volume = 0.25; //Réglage du volume 
+					ecouteur.soundTransform = controleur; //Application du volume sonore
+					//ecouteur.addEventListener(Event.SOUND_COMPLETE, boucle_son); //Applique un écouteur détectant la fin de lecture du son
+					
+				}
+				
+		
+				//Alert.show(replaceAcc(question[valeur_question_id][1]));
+				
+				//maj
+				var valeur_aleatoire:String = String(Math.round(Math.random()*(Number(tailleQuestion-1)-0+1)+(0-.5)));
+				valeur_question_id = uint(valeur_aleatoire);
+				questionIntitule.text=question[valeur_aleatoire][0];
+				reponseText.text=premiereLettre(question[valeur_aleatoire][1]);
+				nbreLettre.text=String(question[valeur_aleatoire][1].length-1);
+				valeurPoint=2;
+			}
+			public function jocker():void{
+				if(reponseText.text!=moitie(question[valeur_question_id][1])&&(reponseText.text!=entie(question[valeur_question_id][1]))){
+					reponseText.text=moitie(question[valeur_question_id][1]);
+					valeurPoint=1;
+					nbreLettre.text=String(question[valeur_question_id][1].length-uint(moitie(question[valeur_question_id][1]).length));
+				}else if((reponseText.text==entie(question[valeur_question_id][1]))){
+					valider();
+				}
+				else{
+					reponseText.text=entie(question[valeur_question_id][1]);
+					valeurPoint=0;
+					
+					intervalIdentifier = setTimeout(valider, 1000)
+					nbreLettre.text=String(0);
+				}
+			}
+			
+			public function moitie(str:String) : String {
+				var firstChar:String = str.substr(0, 1);
+				var restOfString:String = str.substr(1, (str.length-1)/2);
+				
+				return firstChar.toUpperCase()+restOfString;
+			}
+			
+			public function entie(str:String) : String {
+				var firstChar:String = str.substr(0, 1);
+				var restOfString:String = str.substr(1, (str.length-1));
+				
+				return firstChar.toUpperCase()+restOfString;
+			}
+			
+			private function onKeyUp(event:KeyboardEvent):void {
+				if ( event.keyCode == 13 ) {
+					valider();
+				}else{
+					if ( event.keyCode == 8) {
+						nbreLettre.text=String((question[valeur_question_id][1].length-reponseText.text.length)+1);
+					}else{
+						if(((question[valeur_question_id][1].length-reponseText.text.length)-1)<=0){
+							nbreLettre.text=String(0);
+						}else{
+							nbreLettre.text=String((question[valeur_question_id][1].length-reponseText.text.length)-1);
+						}
+					}
+					
+				}
+			}
+		]]>
+	</fx:Script>
+	
+	
+		
+			
+			
+			<s:Form id="Menu" visible="true" styleName="Formulaires">
+				<s:VGroup left="40%">
+					<s:HGroup left="15%">
+						<s:FormItem><mx:Image id="logo" alpha="1" source="lgog.png" left="50" click="accueil()"/>
+						<s:Label id="introduction" text="Devinez le maximum de mots grâce à leur définition. Utilisez le bouton indice en cas de besoin, mais cela coûte la moitié des points sur un mot. Un deuxième clique vous donne la solution. Collectez le plus de points en 80 secondes et tentez de débloquer des trophées." width="300" fontSize="12" textAlign="justify" lineHeight="16"></s:Label></s:FormItem>
+						
+					</s:HGroup>
+					<s:HGroup top="0" left="50">
+						<mx:Image left="50" click="jouer()" id="button_jouer" top="0" alpha="1" source="button_jouer.png"/>   
+						<mx:Image id="score_button" left="10" alpha="1" source="score_button.png" click="score()" />
+					</s:HGroup>
+				</s:VGroup>		
+			</s:Form>
+				
+	
+			<s:Form id="Score" visible="false">
+				<s:VGroup left="40%">
+					<s:HGroup left="15%">
+						<s:FormItem><mx:Image alpha="1" source="lgog.png" left="50" click="accueil()"/></s:FormItem>
+					</s:HGroup>
+					<s:VGroup top="0" left="80" styleName="trophe">
+						
+							<s:FormItem><mx:Image left="80" height="75" top="0" alpha="1" source="or.png"/>   <s:Label id="OrNbre" text="0" fontSize="30"/></s:FormItem>
+								<s:FormItem><mx:Image left="80" height="75" alpha="1" source="argent.png" /><s:Label id="ArgentNbre" text="0" fontSize="30"/></s:FormItem>
+									<s:FormItem><mx:Image left="80" height="75" alpha="1" source="bronze.png" /><s:Label id="BronzeNbre" text="0" fontSize="30"/></s:FormItem>
+						
+					</s:VGroup>
+				</s:VGroup>		
+			</s:Form>
+		
+			<s:Form id="Question" visible="false">
+				<s:VGroup left="40%">
+					<s:HGroup left="15%">
+						<s:FormItem><mx:Image alpha="1" source="lgog.png" left="75" click="accueil()"/></s:FormItem>
+					</s:HGroup>
+					
+					<s:VGroup top="0">
+						<s:VGroup>
+							<s:VGroup>
+								<s:FormItem id="erreurResultatItem" height="0"><s:Label id="erreurResultat" text="" fontSize="0" color="red"></s:Label></s:FormItem>
+							
+								<s:FormItem><mx:ProgressBar id="bar" labelPlacement="bottom" chromeColor="green"
+												minimum="1" visible="true" maximum="80" label="80 secondes 0 points" 
+												direction="right" mode="manual" width="300" height="75%" trackHeight="40"/>
+									</s:FormItem>
+								
+								
+								<s:FormItem><s:Label id="questionIntitule" text="" width="300" fontSize="15"></s:Label></s:FormItem>
+							</s:VGroup>
+							<s:HGroup top="0">
+								<s:FormItem>
+									<s:HGroup top="0" left="0">
+									<mx:TextInput id="reponseText" width="244" height="45" fontSize="30" keyDown="onKeyUp(event);"/>
+									<s:FormItem><s:Label id="nbreLettre" text="0" fontSize="30" color="gray"></s:Label></s:FormItem>
+									</s:HGroup>		
+										
+									<s:HGroup top="0" left="0">
+									
+									<mx:Image click="valider()" width="244" id="validerBoutonExpert" top="0" alpha="1" source="valider.png"/> 
+									<mx:Image click="jocker()" id="jockerBoutonExpert" top="0" alpha="1" source="indice_petit.png"/>   
+									</s:HGroup>	
+								</s:FormItem>
+							</s:HGroup>
+						</s:VGroup>
+					</s:VGroup>
+					
+				</s:VGroup>		
+			</s:Form>	
+	
+			<s:Form id="Resultat" visible="false">
+				
+					
+				
+				<s:VGroup left="40%">
+					
+					
+					<s:VGroup top="0">
+						<s:VGroup>
+							<s:VGroup>
+								<s:FormItem><s:Label id="resultatIntitule" text="Fin de la partie" fontSize="30"></s:Label>
+									<s:Label id="resultatScore" text="0 points" fontSize="20"></s:Label></s:FormItem>
+								<mx:Image id="tropheImage" alpha="1" source=""/>
+								<s:Button id="Rejouer" top="0" width="300" height="30" label="Rejouer" click="jouer()"></s:Button>
+								<s:Button id="accueilBouton" top="0" width="300" height="30" label="Accueil" click="accueil()"></s:Button>
+								<s:FormItem><s:Label id="VosErreurs" text="" fontSize="30"/></s:FormItem>
+								<mx:HBox height="400" width="300">
+									
+									<s:FormItem><s:Label id="erreurAfficher" width="240" text="" fontSize="12"></s:Label></s:FormItem>
+								</mx:HBox>
+							</s:VGroup>
+						
+						</s:VGroup>
+					</s:VGroup>
+					
+				</s:VGroup>		
+				
+			</s:Form>
+				
+				
+		
+</s:Application>
